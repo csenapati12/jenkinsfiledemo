@@ -1,0 +1,137 @@
+
+name: nyul-datafactory-CI-CD-hcm
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - adf_publish
+    # paths:
+    #   - 'adf-databricks-hcm-nonprod-eastus2-001/**'
+permissions:
+   id-token: write
+   contents: read
+env:
+  system_debug: true
+  trigger: false
+jobs:
+  ADF_DEV_Deploy:
+    name: ADF_DEV_Deploy
+    if: github.ref_name == 'adf_publish'
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    environment: nonprod
+    steps:    
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: adf_publish
+
+      - name: Stop ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Stop-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+      - name: ADF dev publish Linkedarm0
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: CICD/backups/hcmtemplates_0204/ARMTemplateForFactory.json
+           parameters: CICD/backups/hcmtemplates_0204/ARMTemplateParametersForFactory.json
+           deploymentMode: Validate
+      
+      - name: Start ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+  ADF_CD_PROD:
+    name: ADF_CD_PROD
+    needs: [ADF_DEV_Deploy]
+    if: ${{ success() && github.ref_name == 'adf_publish' }}
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    environment: prod
+    steps:    
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: adf_publish
+
+      - name: Stop ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Stop-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+  
+      - name: ADF prod publish
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-hcm-prod-eastus2-001/ARMTemplateForFactory.json
+           parameters: adf-databricks-hcm-prod-eastus2-001/ARMTemplateParametersForFactory.json
+           deploymentMode: Validate
+  
+      - name: Start ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }

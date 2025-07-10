@@ -1,0 +1,137 @@
+name: nyul-datafactory-CI-CD
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - Develop
+permissions:
+   id-token: write
+   contents: read
+env:
+  system_debug: true
+  trigger: false
+jobs:
+  adf_ci:
+    name: ADF CI
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    environment: nonprod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+        # with:
+        #   path: ${{ github.workspace }}
+        
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+             
+      - name: Install npm package
+        #working-directory: '${{ github.workspace }}'
+        run: npm install
+
+      - name: Validate
+        #working-directory: '${{ github.workspace }}'
+        run: npm run build validate '$GITHUB_WORKSPACE' '/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.DataFactoryResourceGroupName }}/providers/Microsoft.DataFactory/factories/${{ vars.DataFactoryName }}'
+        
+      - name: Generate ARM template
+        #working-directory: '${{ github.workspace }}'
+        run: npm run build export '$GITHUB_WORKSPACE' '/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.DataFactoryResourceGroupName }}/providers/Microsoft.DataFactory/factories/${{ vars.DataFactoryName }}' 'ARMTemplateOutput'
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: datafactory
+          path: 'ARMTemplateOutput'
+          if-no-files-found: warn
+  ADF_CD:
+    name: Dev ADF Deploy
+    if:  github.ref_name == 'Develop1'
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    needs: adf_ci
+    environment: nonprod
+    steps:    
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      - name: Download ADF templates
+        uses: actions/download-artifact@v4
+        with:
+          name: datafactory
+          path: datafactory
+          
+
+      - name: Stop Triggers
+        if: ${{ env.trigger == 'true' }}
+        uses: azure/powershell@v2
+        with:
+            inlineScript: |
+                # $filePath = "active_triggers"
+                # if (Test-Path $filePath) {
+                # $triggers = Get-Content -Path $filePath
+                # foreach ($trigger in $triggers) {
+                #     Write-Output $trigger
+                #     Stop-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" -DataFactoryName "${{ vars.DataFactoryName }}" -Name "$trigger" -Force
+                #     }
+                # } else {
+                #     Write-Output "File not found: $filePath"
+                #  }
+            azPSVersion: latest
+
+      - name: ADF dev publish Linkedarm1
+        if:  github.ref_name == 'Develop'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: datafactory/ARMTemplateForFactory.json
+           parameters: datafactory/ARMTemplateParametersForFactory.json
+           deploymentMode: Validate
+    
+      - name: Start Triggers
+        if: ${{ env.trigger == 'true' }}
+        uses: azure/powershell@v2
+        with:
+            inlineScript: |
+                # #$triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}";
+                # #$triggersADF | ForEach-Object { Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName}}" -DataFactoryName "${{ vars.DataFactoryName}}" -Name $_.name -Force }
+                # # Path to the trigger file containing the list of active triggers
+                # $filePath = "active_triggers"
+                # # Check if the file exists
+                # if (Test-Path $filePath) {
+                #   # Read all trigger names from the file
+                #   $triggers = Get-Content -Path $filePath
+
+                #   # Print each value from the list
+                #   foreach ($trigger in $triggers) {
+                #       Write-Output $trigger
+                #       Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName}}" -DataFactoryName "${{ vars.DataFactoryName }}" -Name "$trigger" -Force  
+                #   }
+                # } else {
+                #   Write-Output "File not found: $filePath"
+                # }
+            azPSVersion: latest
+           

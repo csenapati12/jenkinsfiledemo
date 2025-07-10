@@ -1,0 +1,489 @@
+
+name: nyul-datafactory-CI-CD-prod-publish
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - adf_publish
+    paths:
+      - 'adf-databricks-nonprod-eastus2/**'
+permissions:
+   id-token: write
+   contents: read
+env:
+  system_debug: true
+  trigger: false
+jobs:
+  ADF_DEV_Deploy:
+    name: ADF_DEV_Deploy
+    if: github.ref_name == 'adf_publish'
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    environment: nonprod
+    steps:    
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: adf_publish
+
+      - name: Stop ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Stop-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+      - name: ADF dev publish Linkedarm0
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: ./adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_0.json
+           parameters: ./adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_0.parameters.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm1
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_1.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_1.parameters.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm2
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_2.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_2.parameters.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm3
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_3.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_3.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm4
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_4.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_4.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm5
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_5.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_5.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm6
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_6.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_6.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm7
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_7.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_7.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm8
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_8.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_8.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm9
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_9.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_9.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm10
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_10.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_10.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm11
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_11.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_11.json
+           deploymentMode: Validate 
+      - name: ADF dev publish Linkedarm12
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_12.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_12.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm13
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_13.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_13.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm14
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_14.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_14.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm15
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_15.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_15.json
+           deploymentMode: Validate
+      - name: ADF dev publish Linkedarm16
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_16.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_16.json
+           deploymentMode: Validate
+      - name: Start ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+
+  ADF_CD_PROD:
+    name: ADF_CD_PROD
+    needs: [ADF_DEV_Deploy]
+    if: ${{ success() && github.ref_name == 'adf_publish' }}
+    runs-on: [self-hosted-vm, rhel9]
+    container:
+      image: ghcr.io/nyulh/nyu-gh-azure-runner-image:v1.0.1
+      credentials: 
+        username: ${{ github.actor }}
+        password: ${{ secrets.NYULH_GHCR_READ }}
+    environment: prod
+    steps:    
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: adf_publish
+
+      - name: Stop ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Stop-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
+      - name: Update PROD IR and Managed Private Endpoint
+        if: github.ref_name == 'adf_publish'
+        shell: bash
+        run: |
+          #!/bin/bash
+
+          FOLDER_PATH="adf-databricks-nonprod-eastus2/linkedTemplates"
+
+          for file in "$FOLDER_PATH"/*.json; do
+              if [[ ! "$file" =~ parameters\.json$ ]] && [[ ! "$file" =~ master\.json$ ]]; then
+
+                  if grep -q "managedprivateendpoint-adf-databricks-nonprod-eastus2-001" "$file"; then
+                      echo "Processing: $file"
+                      sed -i 's/managedprivateendpoint-adf-databricks-nonprod-eastus2-001/managedprivateendpoint-adf-databricks-prod-eastus2-001/g' "$file"
+                      echo "After Replacement:"
+                      cat "$file"
+                      echo "========================"
+                  fi
+
+                  if grep -q "nonprod-shir-onprem" "$file"; then
+                      echo "Processing: $file"
+                      sed -i 's/nonprod-shir-onprem/prod-shir-onprem/g' "$file"
+                      echo "After Replacement:"
+                      cat "$file"
+                      echo "========================"
+                  fi
+
+
+              fi
+          done
+
+          echo "prod IR and managedprivateendpoint is updated."
+
+      - name: ADF prod publish linkedarm0
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_0.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_0prodparameters.json
+           deploymentMode: Validate 
+      - name: ADF prod publish linkedarm1
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_1.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_1prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm2
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_2.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_2prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm3
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_3.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_3prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm4
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_4.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_4prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm5
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_5.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_5prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm6
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_6.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_6prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm7
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_7.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_7prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm8
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_8.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_8prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm9
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_9.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_9prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm10
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_10.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_10prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm11
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_11.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_11prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm12
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_12.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_12prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm13
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_13.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_13prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm14
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_14.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_14prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm15
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_15.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_15prodparameters.json
+           deploymentMode: Validate
+      - name: ADF prod publish linkedarm16
+        if: github.ref_name == 'adf_publish'
+        uses: Azure/arm-deploy@v2
+        continue-on-error: true
+        with:
+           scope: resourcegroup
+           resourceGroupName: ${{ vars.DataFactoryResourceGroupName }}
+           template: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_16.json
+           parameters: adf-databricks-nonprod-eastus2/linkedTemplates/ArmTemplate_16prodparameters.json
+           deploymentMode: Validate
+      - name: Start ADF Triggers
+        if: ${{ env.trigger == 'true' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $triggersADF = Get-AzDataFactoryV2Trigger -DataFactoryName "${{ vars.DataFactoryName }}" -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}"
+          $triggersADF | ForEach-Object {
+            Start-AzDataFactoryV2Trigger -ResourceGroupName "${{ vars.DataFactoryResourceGroupName }}" `
+              -DataFactoryName "${{ vars.DataFactoryName }}" `
+              -Name $_.Name `
+              -Force
+            }
