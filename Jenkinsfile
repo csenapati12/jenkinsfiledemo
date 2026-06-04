@@ -2,7 +2,7 @@ pipeline {
     agent any
 // testing the jenkins ***************
     stages {
-        stage ('Compile Stage') {
+        stage ('Compile Stage11') {
 
             steps {
                 //withMaven(maven : 'maven3.3.9') {
